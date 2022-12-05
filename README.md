@@ -8,7 +8,7 @@ Feel free to use these, but use at your own risk. I am not responsible for any i
 |Battery powered version of Baby buddy panel built using ESP32 [More info here](https://github.com/jeroenterheerdt/Baby-Buddy-Keypad)|[babybuddy-panel-battery.yaml](babybuddy-panel-battery.yaml)||
 |USB powered version of Baby buddy panel built using ESP32. [More info here](https://github.com/jeroenterheerdt/Baby-Buddy-Keypad)|[babybuddy-panel.yaml](babybuddy-panel.yaml)|
 |Shelly-compatible smart light switches|[backdoorlight2.yaml](backdoorlight2.yaml), [frontoutdoorlights2.yaml](frontoutdoorlights2.yaml), [hallwaymini1.yaml](hallwaymini1.yaml), [livingroommini1.yaml](livingroommini1.yaml), [livingroommini2.yaml](livingroommini2.yaml), [livingroommini3.yaml](livingroommini3.yaml), [smartlightswitch1.yaml](smartlightswitch1.yaml)|
-|ESP8266-based garage doors controller for 2 doors (easily expandable to more), relays and ultrasound distance sensors|[garagedoorscontroller.yaml](garagedoorscontroller.yaml)|
+|ESP8266-based garage doors controller for 2 doors (easily expandable to more). Uses relays (one per door, but can be adapted) and ultrasound distance sensors. Includes switch to lock doors and vehicle presence detection.|[garagedoorscontroller.yaml](garagedoorscontroller.yaml)|
 |ESP8266-based grill thermometer with thermocouple|[grillthermometer.yaml](grillthermometer.yaml)|
 |Shelly-compatible smart fan switch|[guestbathroomfan2.yaml](guestbathroomfan2.yaml), [masterbathroomfan.yaml](masterbathroomfan.yaml)|
 |Presence detection using Tile and ESP32|[hallway.yaml](hallway.yaml), [kitchen.yaml](kitchen.yaml), [tvroom.yaml](tvroom.yaml)|
