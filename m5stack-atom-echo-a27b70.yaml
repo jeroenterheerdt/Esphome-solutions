@@ -1,0 +1,11 @@
+substitutions:
+  name: m5stack-atom-echo-a27b70
+packages:
+  m5stack.atom-echo: github://esphome/media-players/m5stack-atom-echo.yaml@main
+esphome:
+  name_add_mac_suffix: false
+
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password

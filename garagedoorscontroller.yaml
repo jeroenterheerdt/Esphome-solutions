@@ -1,0 +1,228 @@
+esphome:
+  name: garagedoorscontroller
+  
+esp8266:
+  board: d1_mini
+  restore_from_flash: true
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  password: !secret api_password
+  encryption:
+    key: !secret api_key
+
+ota:
+  password: !secret OTA_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Garagedoorscontroller"
+    password: !secret hotspot_password
+    
+
+captive_portal:
+
+globals:
+  - id: relayActivationPeriod
+    type: int
+    initial_value: "600" #ms
+  - id: doorsLocked
+    type: bool
+    initial_value: "false"
+    restore_value: true
+  - id: doors_open_distance
+    type: float
+    initial_value: "0.60" #m
+  - id: doors_vehicle_present_distance
+    type: float
+    initial_value: "3" #m
+sensor:
+  - platform: ultrasonic
+    trigger_pin: GPIO12 #D6
+    echo_pin: GPIO14 #D5
+    name: "Garage Door Right Distance"
+    #pulse_time: 20us
+    id: right_distance
+    timeout: 20m
+    update_interval: 5s
+    filters:
+      - sliding_window_moving_average:
+          window_size: 15
+          send_every: 15
+  - platform: ultrasonic
+    trigger_pin: GPIO15 #D8
+    echo_pin: GPIO13 #D7
+    name: "Garage Door Left Distance"
+    #pulse_time: 20us
+    timeout: 20m
+    update_interval: 5s
+    id: left_distance
+    filters:
+      - sliding_window_moving_average:
+          window_size: 15
+          send_every: 15
+text_sensor:
+  - platform: template
+    id: left_distance_state
+    name: "Garage Door Left State"
+    lambda:
+      # no vehicle parked in left garage door
+      if (id(left_distance).state <= id(doors_open_distance)) {
+        id(left_distance_state).set_icon("mdi:garage-open");
+        return {"Open"};
+      }
+      else {
+          id(left_distance_state).set_icon("mdi:garage");
+          return {"Closed"};
+      }
+    update_interval: 2s
+  - platform: template
+    id: right_distance_state
+    name: "Garage Door Right State"
+    update_interval: 2s
+    lambda:
+      if (id(right_distance).state <= id(doors_open_distance)) {
+        id(right_distance_state).set_icon("mdi:garage-open");
+        return {"Open"};
+      }
+      else if (id(right_distance).state <= id(doors_vehicle_present_distance)) {
+          id(right_distance_state).set_icon("mdi:parking");
+          return {"Vehicle Present"};
+      }
+      else {
+          id(right_distance_state).set_icon("mdi:garage");
+          return {"Closed"};
+      }
+cover:
+  - platform: template
+    name: "Garage Door Right"
+    id: right_cover
+    open_action:
+      - switch.turn_on: right_button
+      - if:
+          condition:
+            lambda: 'return not id(doorsLocked);'
+          then: 
+            - cover.template.publish:
+                id: right_cover
+                current_operation: OPENING
+    close_action:
+      - switch.turn_on: right_button
+      - if:
+          condition:
+            lambda: 'return not id(doorsLocked);'
+          then: 
+            - cover.template.publish:
+                id: right_cover
+                current_operation: CLOSING
+    lambda:
+      if (id(right_distance_state).state == "Open") {
+        return COVER_OPEN;
+      }
+      else {
+        return COVER_CLOSED;
+      }
+  - platform: template
+    name: "Garage Door Left"
+    id: left_cover
+    open_action:
+      - switch.turn_on: left_button
+      - if:
+          condition:
+            lambda: 'return not id(doorsLocked);'
+          then: 
+            - cover.template.publish:
+                id: left_cover
+                current_operation: OPENING
+    close_action:
+      - switch.turn_on: left_button
+      - if:
+          condition:
+            lambda: 'return not id(doorsLocked);'
+          then: 
+            - cover.template.publish:
+                id: left_cover
+                current_operation: CLOSING
+    lambda:
+      if (id(left_distance_state).state == "Open") {
+        return COVER_OPEN;
+      }
+      else {
+        return COVER_CLOSED;
+      }  
+
+switch:
+  - platform: template
+    name: "Garage Doors Locked"
+    id: garage_doors_locked
+    turn_on_action:
+      - globals.set:
+          id: doorsLocked
+          value: "true"
+      - lambda:
+          if (id(left_distance_state).state== "Open") {
+            id(relay_l).turn_on();
+          }
+          if (id(right_distance_state).state== "Open") {
+            id(relay_r).turn_on();
+          }
+          id(garage_doors_locked).set_icon("mdi:lock");
+    turn_off_action:
+      - globals.set:
+          id: doorsLocked
+          value: "false"
+      - lambda:
+          id(garage_doors_locked).set_icon("mdi:lock-open-variant");
+    lambda:
+      if (id(doorsLocked)) {
+        id(garage_doors_locked).set_icon("mdi:lock");
+        return true;
+      } else {
+        id(garage_doors_locked).set_icon("mdi:lock-open-variant");
+        return false;
+      }
+  - platform: template
+    id: right_button
+    internal: true
+    name: "Garage Door Right Button"
+    lambda: return false;
+    turn_on_action:
+      - if:
+          condition:
+            lambda: 'return not id(doorsLocked);'
+          then:
+            - switch.turn_on: relay_r
+  - platform: template
+    id: left_button
+    internal: true
+    name: "Garage Door Left Button"
+    lambda: return false;
+    turn_on_action:
+      - if:
+          condition:
+            lambda: 'return not id(doorsLocked);'
+          then:
+            - switch.turn_on: relay_l
+  - platform: gpio
+    #name: "Garage Door Right"
+    pin: D1 #GPIO5
+    internal: true
+    id: relay_r
+    on_turn_on:
+      - delay: !lambda return id(relayActivationPeriod);
+      - switch.turn_off: relay_r
+  - platform: gpio
+    #name: "Garage Door Left"
+    pin: D2 #GPIO4
+    id: relay_l
+    internal: true
+    on_turn_on:
+      - delay: !lambda return id(relayActivationPeriod);
+      - switch.turn_off: relay_l

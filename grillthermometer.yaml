@@ -1,0 +1,77 @@
+esphome:
+    name: grillthermometer
+    platform: ESP8266
+    board: d1_mini
+  
+wifi:
+    ssid: !secret wifi_ssid
+    password: !secret wifi_password
+    manual_ip: 
+      static_ip: !secret IP
+      gateway: !secret gateway
+      subnet: !secret subnet
+  
+# Enable logging
+logger:
+  
+# Enable Home Assistant API
+api:
+  password: !secret API_password
+
+ota:
+  password: !secret OTA_password
+  
+spi:
+  miso_pin: D3
+  clk_pin: D5
+  
+sensor:
+  - platform: max31855
+    name: "Grill Temperature"
+    cs_pin: D4
+    update_interval: 0.5s
+    filters:
+      # for ali-ktype punt and adafruit max chip (black)
+      #- multiply: 2.0
+      # for chinese ktype with chinese max chip (green)
+      #- calibrate_linear:
+      #  - 1.5 -> 1
+      #  - 4.2 -> 10
+      #  - 5 -> 15
+      #  - 10 -> 20
+      #  - 11.5 -> 25
+      #  - 13.2 -> 30
+      #  - 16 -> 35
+      #  - 18.5 -> 40
+      #  - 20.5 -> 45
+      #  - 13 -> 50
+      #  - 25.2 -> 55
+      #  - 27.8 -> 60
+      #  - 30.2 -> 65
+      #  - 33 -> 70
+      #  - 35.4 -> 75
+      #  - 38 -> 80
+      #  - 40.2 -> 85
+      #  - 43 -> 90
+      #  - 45 -> 95
+      # for weber ktypes with adafruit max chip (black)
+      #- calibrate_linear:
+      #  - 839.2 -> 7.5
+      #  - 755 -> 10
+      #  - 539 -> 15
+      #  - 339 -> 20
+      #  - 285 -> 25
+      #  - 249 -> 30
+      #  - 230 -> 35
+      #  - 180 -> 40
+      #  - 161 -> 45
+      #  - 95 -> 55
+      #  - 57 -> 65
+      #  - 25 -> 75
+      #  - 20 -> 80
+      #  - 18.5 -> 85
+      #  - 16.8 -> 90
+      #- multiply: 0.3333
+      #- offset: -4.0
+  
+   

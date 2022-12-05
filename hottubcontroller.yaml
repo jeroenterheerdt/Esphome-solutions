@@ -1,0 +1,97 @@
+esphome:
+  name: hottubcontroller
+  platform: ESP32
+  board: esp32dev
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+ota:
+  password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Hottubcontroller"
+    password: !secret hotspot_password
+
+captive_portal:
+
+globals:
+   - id: relay_delay
+     type: int
+     restore_value: no
+     initial_value: '500'
+     
+esp32_ble_tracker:
+
+sensor:
+  # https://esphome.io/components/sensor/adc.html
+  - platform: adc
+    pin: GPIO33 #(https://esphome.io/components/sensor/adc.html)
+    id: ph_v
+    name: "Hottub pH V"
+    unit_of_measurement: V
+    update_interval: 1s
+    filters:
+      - median:
+         window_size: 10
+         send_every: 10
+         send_first_at: 1
+  - platform: template
+    # y = -23.077x24.077
+    id: ph
+    name: "Hottub pH"
+    unit_of_measurement: pH
+    lambda: return -23.077*id(ph_v).state+24.077;
+    update_interval: 15s       
+  # temperature sensor (address: 0xe00120337292f628)
+  - platform: dallas
+    address: 0xe00120337292f628
+    name: Hottub Temperature
+  # RSSI based on MAC address
+  - platform: ble_rssi
+    mac_address: !dog_tile_mac
+    name: "dog Tile Esphome Hottub RSSI"
+
+#temperature sensor platform
+dallas:
+  - pin: GPIO17
+  
+binary_sensor:
+  - platform: ble_presence
+    mac_address: !dog_tile_mac
+    name: "dog Tile Esphome Hottub Presence"
+  - platform: gpio
+    pin: GPIO18
+    name: "Button Temp Down"
+    on_press:
+      then:
+        - switch.turn_on: relay_down
+        - delay: !lambda return id(relay_delay);
+        - switch.turn_off: relay_down
+  - platform: gpio
+    pin: GPIO19
+    on_press:
+      then:
+        - switch.turn_on: relay_up
+        - delay: !lambda return id(relay_delay);
+        - switch.turn_off: relay_up
+    name: "Button Temp Up"
+    
+#relay for solenoids
+switch:
+  - platform: gpio
+    name: "Relay Up"
+    pin: GPIO27
+    id: relay_up
+  - platform: gpio
+    id: relay_down
+    name: "Relay Down"
+    pin: GPIO25

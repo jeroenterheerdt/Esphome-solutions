@@ -1,0 +1,36 @@
+esphome:
+  name: tvroom
+  platform: ESP32
+  board: esp32dev
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+ota:
+  password: !secret OTA_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: TVRoom Fallback Hotspot"
+    password: !secret fallback_hotspot_password
+
+captive_portal:
+
+esp32_ble_tracker:
+
+sensor:
+  # RSSI based on MAC address
+  - platform: ble_rssi
+    mac_address: !secret dog_tile_mac
+    name: "dog Tile Esphome TVRoom RSSI"
+binary_sensor:
+  - platform: ble_presence
+    mac_address: !secret dog_tile_mac
+    name: "dog Tile Esphome TVRoom Presence"

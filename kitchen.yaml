@@ -1,0 +1,48 @@
+esphome:
+  name: kitchen
+  platform: ESP32
+  board: esp32dev
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+ota:
+  password: !secret OTA_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Kitchen Fallback Hotspot"
+    password: !secret fallback_hotspot_password
+
+captive_portal:
+
+esp32_ble_tracker:
+
+sensor:
+  - platform: xiaomi_hhccjcy01
+    mac_address: !secret miflora_mac
+    temperature:
+      name: "MiFlora Temperature"
+    moisture:
+      name: "MiFlora Moisture"
+    illuminance:
+      name: "MiFlora Illuminance"
+    conductivity:
+      name: "MiFlora Soil Conductivity"
+    battery_level:
+      name: "MiFlora Battery Level"
+  # RSSI based on MAC address
+  - platform: ble_rssi
+    mac_address: !secret dog_tile_mac
+    name: "dog Tile Esphome Kitchen RSSI"
+binary_sensor:
+  - platform: ble_presence
+    mac_address: !secret dog_tile_mac
+    name: "dog Tile Esphome Kitchen Presence"

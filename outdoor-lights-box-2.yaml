@@ -1,0 +1,74 @@
+esphome:
+  name: outdoor_lights_box_2 
+  platform: ESP8266
+  board: d1_mini
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  manual_ip: 
+    static_ip: !secret IP
+    gateway: !secret gateway
+    subnet: !secret subnet
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Outdoor LB2 Fallback Hotspot"
+    password: !secret fallback_hotspot_password
+
+captive_portal:
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  password: !secret API_password
+
+ota:
+  password: !secret OTA_password
+
+remote_transmitter:
+  pin: D4
+  carrier_duty_percent: 50%
+
+switch:
+  - platform: template
+    name: Laser Power
+    turn_on_action:
+     - remote_transmitter.transmit_nec:
+         address: 0x00FF
+         command: 0xE817
+  - platform: template
+    name: Laser Pattern
+    turn_on_action:
+     - remote_transmitter.transmit_nec:
+         address: 0x00FF
+         command: 0xF807
+  - platform: gpio
+    name: "Relay"
+    pin: D1
+
+sensor:
+  - platform: dht
+    pin: D3
+    model: DHT11
+    temperature:
+      name: "Outdoor Lights Box Temperature"
+    humidity:
+      name: "Outdoor Lights Box Humidity"
+    update_interval: 60s
+
+light:
+  - platform: monochromatic
+    name: "Wemos LED"
+    output: output_component1
+
+output:
+  - platform: esp8266_pwm
+    id: output_component1
+    inverted: true
+    pin: D4
+
+  
