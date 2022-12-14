@@ -1,5 +1,5 @@
 # Esphome-solutions
-Ever-expanding collection of esphome solutions
+Ever-expanding collection of esphome solutions.
 Feel free to use these, but use at your own risk. I am not responsible for any issue caused.
 
 # Available solutions
