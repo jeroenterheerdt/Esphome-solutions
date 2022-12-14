@@ -18,4 +18,4 @@ Feel free to use these, but use at your own risk. I am not responsible for any i
 |ESP32-based controller for electric heater, uses IR signals to mimic the remote. Also includes presence detection using Tile.|[office.yaml](office.yaml)|
 |ESP8266-based controller for outdoor holiday lights, includes mimicing a IR remote|[outdoor-lights-box-2.yaml](outdoor-lights-box-2.yaml)|
 |ESP8266-based controller for proofing box. Controls a heating mat using a relay to maintain a set temperature.|[proofercontroller.yaml](proofercontroller.yaml)|
-
+|ESP32-based mailbox sensor, leverages a reed sensor and a magnet. If magnet is close to sensor the mailbox is reported as closed and the ESP32 is in deepsleep. It wakes up when the magnet is removed (mailbox is open) and then sleeps after a couple of seconds. Is battery powered (2x AA) so uses MQTT instead of native API to connect to HA.|[mailbox.yaml](mailbox.yaml)|
