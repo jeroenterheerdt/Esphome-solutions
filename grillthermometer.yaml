@@ -24,14 +24,165 @@ ota:
 spi:
   miso_pin: D3
   clk_pin: D5
-  
+
+text_sensor:
+  - platform: template
+    name: "Air Quality Index Description"
+    id: aqidesc
+    icon: mdi:cloud-alert
+    filters:
+      - lambda:
+          if(id(aqi).state <=10) {
+            return {"Excellent"};
+          }
+          else if(id(aqi).state <= 50) {
+            return {"Good"};
+          }
+          else if(id(aqi).state <= 100) {
+            return {"Moderate"};
+          }
+          else if(id(aqi).state <= 150) {
+            return {"Unhealthy for sensitive groups"};
+          }
+          else if(id(aqi).state <= 200) {
+            return {"Unhealthy"};
+          }
+          else if(id(aqi).state <= 300) {
+            return {"Very Unhealthy"};
+          }
+          else return {"Hazardous"};
+globals:
+  - id: AQI
+    type: int
+    restore_value: no
+    initial_value: '0'   
+
 sensor:
+  - platform: pulse_width
+    pin: D7
+    name: PM1.0
+    update_interval: 1s
+    id: pm1
+    icon: mdi:chemical-weapon
+    unit_of_measurement: "µg/m3"
+    device_class: pm1
+    state_class: measurement
+    filters:
+      - sliding_window_moving_average:
+          window_size: 30
+          send_every: 30
+          send_first_at: 30
+      - multiply: 100.0
+      - lambda:
+          return 0.001915 * pow(x,2) + 0.09522 * x - 0.04884;
+  - platform: pulse_width
+    pin: D8
+    name: PM2.5
+    update_interval: 1s
+    id: pm2
+    icon: mdi:biohazard
+    unit_of_measurement: "µg/m3"
+    device_class: pm25
+    state_class: measurement
+    filters:
+      - sliding_window_moving_average:
+          window_size: 30
+          send_every: 30
+          send_first_at: 30
+      - multiply: 100.0
+      - lambda:
+          return 0.001915 * pow(x,2) + 0.09522 * x - 0.04884;
+    on_value:
+      - then:
+          - sensor.template.publish:
+              id: pm2density
+              state: !lambda return id(pm2).state;
+  - platform: template
+    update_interval: never
+    id: pm2density
+    accuracy_decimals: 0
+    filters:
+      - multiply: 10
+      - lambda:
+          int I_high = 0;
+          int I_low = 0;
+          int C_high = 0;
+          int C_low = 0;
+          if (x <= 0) {
+            id(AQI) = 0;
+          }
+          else if (x<= 120) {
+            I_high = 50;
+            I_low = 0;
+            C_high = 120;
+            C_low = 0;
+          }
+          else if (x<= 354) {
+            I_high = 100;
+            I_low = 51;
+            C_high = 354;
+            C_low = 121;
+          }
+          else if (x<= 554) {
+            I_high = 150;
+            I_low = 101;
+            C_high = 554;
+            C_low = 355;
+          }
+          else if (x<= 1504) {
+            I_high = 200;
+            I_low = 151;
+            C_high = 1504;
+            C_low = 555;
+          }
+          else if (x<= 2504) {
+            I_high = 300;
+            I_low = 201;
+            C_high = 2504;
+            C_low = 1505;
+          }
+          else if (x<= 3504) {
+            I_high = 400;
+            I_low = 301;
+            C_high = 3504;
+            C_low = 2505;
+          }
+          else if (x<= 5004) {
+            I_high = 500;
+            I_low = 401;
+            C_high = 5004;
+            C_low = 3505;
+          }
+          else if (x<= 10000) {
+            I_high = 1000;
+            I_low = 501;
+            C_high = 10000;
+            C_low = 5005;
+          }
+          else {
+            id(AQI) = 1001;
+          }
+          if(I_high != 0) {
+            id(AQI) = (I_high - I_low) * (x - C_low) / (C_high - C_low) + I_low;
+          }
+          id(aqi)->publish_state(id(AQI));
+          id(aqidesc)->publish_state({});
+          return x;
+  - platform: template
+    name: "Air Quality Index"
+    device_class: aqi
+    state_class: measurement
+    id: aqi
+    accuracy_decimals: 0
+    filters:
+      - lambda:
+          return id(AQI);
   - platform: max31855
     name: "Grill Temperature"
     cs_pin: D4
     update_interval: 0.5s
     filters:
-      # for ali-ktype punt and adafruit max chip (black)
+      # for ali-ktype met punt en adafruit max chip (zwarte)
       #- multiply: 2.0
       # for chinese ktype with chinese max chip (green)
       #- calibrate_linear:
@@ -54,7 +205,7 @@ sensor:
       #  - 40.2 -> 85
       #  - 43 -> 90
       #  - 45 -> 95
-      # for weber ktypes with adafruit max chip (black)
+      # for weber ktypes met adafruit max chip (zwarte)
       #- calibrate_linear:
       #  - 839.2 -> 7.5
       #  - 755 -> 10
@@ -74,4 +225,18 @@ sensor:
       #- multiply: 0.3333
       #- offset: -4.0
   
-   
+    # todo: testen met de ali max chip (groene en de combinaties van ktypes
+    #filters:
+    #  - sliding_window_moving_average:
+    #      window_size: 20
+    #      send_every: 5
+      #- calibrate_linear:
+      #   - 11.5 -> 22.0
+      
+      
+    #    - 11.0 -> 22.7
+    #    - 15.2 -> 34.1
+    #    - 16.5 -> 35.5
+    #    - 16.8 -> 36.0
+    #    - 17.0 -> 36.5
+    #    - 18.0 -> 38
